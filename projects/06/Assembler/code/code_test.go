@@ -51,53 +51,6 @@ func TestDest(t *testing.T) {
 			want:  "000",
 		},
 		{
-			input: "JGT",
-			want:  "001",
-		},
-		{
-			input: "JEQ",
-			want:  "010",
-		},
-		{
-			input: "JGE",
-			want:  "011",
-		},
-		{
-			input: "JLT",
-			want:  "100",
-		},
-		{
-			input: "JNE",
-			want:  "101",
-		},
-		{
-			input: "JLE",
-			want:  "110",
-		},
-		{
-			input: "JMP",
-			want:  "111",
-		},
-	}
-
-	for _, tc := range tests {
-		got := Jump(tc.input)
-		if diff := cmp.Diff(tc.want, got); diff != "" {
-			t.Errorf("Jump(%s) mismatch (-want +got):\n%s", tc.input, diff)
-		}
-	}
-}
-
-func TestJmp(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{
-			input: "", // null input
-			want:  "000",
-		},
-		{
 			input: "M",
 			want:  "001",
 		},
@@ -131,6 +84,53 @@ func TestJmp(t *testing.T) {
 		got := Dest(tc.input)
 		if diff := cmp.Diff(tc.want, got); diff != "" {
 			t.Errorf("Dest(%s) mismatch (-want +got):\n%s", tc.input, diff)
+		}
+	}
+}
+
+func TestJump(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "", // null input
+			want:  "000",
+		},
+		{
+			input: "JGT",
+			want:  "001",
+		},
+		{
+			input: "JEQ",
+			want:  "010",
+		},
+		{
+			input: "JGE",
+			want:  "011",
+		},
+		{
+			input: "JLT",
+			want:  "100",
+		},
+		{
+			input: "JNE",
+			want:  "101",
+		},
+		{
+			input: "JLE",
+			want:  "110",
+		},
+		{
+			input: "JMP",
+			want:  "111",
+		},
+	}
+
+	for _, tc := range tests {
+		got := Jump(tc.input)
+		if diff := cmp.Diff(tc.want, got); diff != "" {
+			t.Errorf("Jump(%s) mismatch (-want +got):\n%s", tc.input, diff)
 		}
 	}
 }
