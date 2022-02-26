@@ -1,4 +1,4 @@
-module nand2tetris/projects/06/Assembler
+module github.com/gwtp/nand2tetris/projects/06/Assembler
 
 go 1.17
 
