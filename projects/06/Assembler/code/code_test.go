@@ -51,6 +51,10 @@ func TestDest(t *testing.T) {
 			want:  "000",
 		},
 		{
+			input: "0",
+			want:  "000",
+		},
+		{
 			input: "M",
 			want:  "001",
 		},
