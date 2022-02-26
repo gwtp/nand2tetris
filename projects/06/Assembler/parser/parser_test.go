@@ -39,6 +39,13 @@ func TestParserSymbol(t *testing.T) {
 			wantSymbol:      "100",
 		},
 		{
+			name:            "Comment",
+			input:           "// @foobar",
+			hasMoreCommands: true,
+			cType:           UnknownCommand,
+			wantSymbol:      "",
+		},
+		{
 			name:            "empty input",
 			input:           "",
 			hasMoreCommands: false,
@@ -49,13 +56,13 @@ func TestParserSymbol(t *testing.T) {
 
 	for _, tc := range tests {
 		p := Parser{scanner: bufio.NewScanner(strings.NewReader(tc.input))}
-		got, err := p.HasMoreCommands()
+		got := p.HasMoreCommands()
 		if diff := cmp.Diff(tc.hasMoreCommands, got); diff != "" {
 			t.Errorf("p.HasMoreCommands(%s) mismatch (-want +got):\n%s", tc.name, diff)
 			continue
 		}
-		if err != nil {
-			t.Fatalf("p.HasMoreCommands(%s): %v", tc.name, err)
+		if err := p.Error(); err != nil {
+			t.Fatalf("p.Error(%s): %v", tc.name, err)
 		}
 
 		// No commands to process
@@ -108,6 +115,24 @@ func TestParserCCommand(t *testing.T) {
 			wantJump:        "JGT",
 		},
 		{
+			name:            "Comment 1",
+			input:           "// M=D+M",
+			hasMoreCommands: true,
+			cType:           UnknownCommand,
+			wantComp:        "",
+			wantDest:        "",
+			wantJump:        "",
+		},
+		{
+			name:            "Comment 2",
+			input:           "// 0;JMP",
+			hasMoreCommands: true,
+			cType:           UnknownCommand,
+			wantComp:        "",
+			wantDest:        "",
+			wantJump:        "",
+		},
+		{
 			name:            "empty input",
 			input:           "",
 			hasMoreCommands: false,
@@ -120,13 +145,13 @@ func TestParserCCommand(t *testing.T) {
 
 	for _, tc := range tests {
 		p := Parser{scanner: bufio.NewScanner(strings.NewReader(tc.input))}
-		got, err := p.HasMoreCommands()
+		got := p.HasMoreCommands()
 		if diff := cmp.Diff(tc.hasMoreCommands, got); diff != "" {
 			t.Errorf("p.HasMoreCommands(%s) mismatch (-want +got):\n%s", tc.name, diff)
 			continue
 		}
-		if err != nil {
-			t.Fatalf("p.HasMoreCommands(%s): %v", tc.name, err)
+		if err := p.Error(); err != nil {
+			t.Fatalf("p.Error(%s): %v", tc.name, err)
 		}
 
 		// No commands to process

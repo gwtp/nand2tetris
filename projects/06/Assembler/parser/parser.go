@@ -19,6 +19,7 @@ const (
 type Parser struct {
 	scanner      *bufio.Scanner
 	moreCommands bool
+	err          error
 
 	commandType CommandType
 	comp        string
@@ -27,31 +28,42 @@ type Parser struct {
 	symbol      string
 }
 
-func New(path string) (*Parser, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+func New(f *os.File) *Parser {
+	return &Parser{scanner: bufio.NewScanner(f)}
+}
 
-	return &Parser{scanner: bufio.NewScanner(f)}, nil
+func (p *Parser) Error() error {
+	return p.err
 }
 
 // HasMoreCommands checks if there are any more commands in the input.
-func (p *Parser) HasMoreCommands() (bool, error) {
+func (p *Parser) HasMoreCommands() bool {
 	s := p.scanner.Scan()
 
 	if err := p.scanner.Err(); err != nil {
-		return false, err
+		p.err = err
+		return false
 	}
 
-	return s, nil
+	return s
+}
+
+// reset sets parser variables back to zero value.
+func (p *Parser) reset() {
+	p.commandType = UnknownCommand
+	p.comp = ""
+	p.dest = ""
+	p.jump = ""
+	p.symbol = ""
 }
 
 // Advance reads the next command from the input. Should only be called if HasMoreCommands() is true.
 func (p *Parser) Advance() {
-	line := p.scanner.Text()
-	switch {
+	p.reset()
+	switch line := p.scanner.Text(); {
+	// Comment
+	case strings.HasPrefix(line, "//"):
+		p.commandType = UnknownCommand
 	// Label
 	case strings.HasPrefix(line, "("):
 		p.commandType = LCommand
@@ -78,9 +90,9 @@ func (p *Parser) CommandType() CommandType {
 	return p.commandType
 }
 
-// Symbol returns the symbol or decimal of the current command. Should only be called when command type is ACommand or LCommand.
-func (p *Parser) Symbol() string {
-	return p.symbol
+// Comp returns the comp mnemonic. Should only be called when CommandType() is CCommand.
+func (p *Parser) Comp() string {
+	return p.comp
 }
 
 // Dest return the dest mnemonic. Should only be called when CommandType() is CCommand.
@@ -88,12 +100,12 @@ func (p *Parser) Dest() string {
 	return p.dest
 }
 
-// Comp returns the comp mnemonic. Should only be called when CommandType() is CCommand.
-func (p *Parser) Comp() string {
-	return p.comp
-}
-
 // Jump returns the jump mnemonic. Should only be called when CommandType() is CCommand.
 func (p *Parser) Jump() string {
 	return p.jump
+}
+
+// Symbol returns the symbol or decimal of the current command. Should only be called when command type is ACommand or LCommand.
+func (p *Parser) Symbol() string {
+	return p.symbol
 }
