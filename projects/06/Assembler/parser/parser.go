@@ -3,7 +3,7 @@ package parser
 
 import (
 	"bufio"
-	"os"
+	"io"
 	"strings"
 )
 
@@ -28,7 +28,7 @@ type Parser struct {
 	symbol      string
 }
 
-func New(f *os.File) *Parser {
+func New(f io.Reader) *Parser {
 	return &Parser{scanner: bufio.NewScanner(f)}
 }
 
@@ -60,7 +60,7 @@ func (p *Parser) reset() {
 // Advance reads the next command from the input. Should only be called if HasMoreCommands() is true.
 func (p *Parser) Advance() {
 	p.reset()
-	switch line := p.scanner.Text(); {
+	switch line := strings.TrimSpace(p.scanner.Text()); {
 	// Comment
 	case strings.HasPrefix(line, "//"):
 		p.commandType = UnknownCommand

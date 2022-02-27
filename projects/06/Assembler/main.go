@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -16,7 +17,7 @@ import (
 
 var file = flag.String("file", "", "Path to the assembly file, containing hack assembly program.")
 
-func parse(in, out *os.File) error {
+func translate(in io.Reader, out io.Writer) error {
 	p := parser.New(in)
 	for p.HasMoreCommands() {
 		p.Advance()
@@ -27,9 +28,10 @@ func parse(in, out *os.File) error {
 			if err != nil {
 				return err
 			}
-			out.WriteString(fmt.Sprintf("0%s\n", fmt.Sprintf("%016b", i)[1:]))
+			out.Write([]byte(fmt.Sprintf("0%s\n", fmt.Sprintf("%016b", i))[1:]))
 		case parser.CCommand:
-			out.WriteString(fmt.Sprintf("111%s%s%s\n", code.Comp(p.Comp()), code.Dest(p.Dest()), code.Jump(p.Jump())))
+			comp, dest, jump := code.Comp(p.Comp()), code.Dest(p.Dest()), code.Jump(p.Jump())
+			out.Write([]byte(fmt.Sprintf("111%s%s%s\n", comp, dest, jump)))
 		}
 	}
 	if err := p.Error(); err != nil {
@@ -44,7 +46,7 @@ func main() {
 
 	in, err := os.Open(*file)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "open error: %v\n", err)
 		os.Exit(1)
 	}
 	defer in.Close()
@@ -52,13 +54,13 @@ func main() {
 	outFile := fmt.Sprintf("%s.hack", strings.Split(in.Name(), ".")[0])
 	out, err := os.Create(outFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "create error: %v\n", err)
 		os.Exit(1)
 	}
 	defer out.Close()
 
-	if err := parse(in, out); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	if err := translate(in, out); err != nil {
+		fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
 		os.Exit(1)
 	}
 
