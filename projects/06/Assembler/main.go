@@ -13,25 +13,60 @@ import (
 
 	"github.com/gwtp/nand2tetris/projects/06/Assembler/code"
 	"github.com/gwtp/nand2tetris/projects/06/Assembler/parser"
+	"github.com/gwtp/nand2tetris/projects/06/Assembler/symbol"
 )
 
-var file = flag.String("file", "", "Path to the assembly file, containing hack assembly program.")
+var (
+	file = flag.String("file", "", "Path to the assembly file, containing hack assembly program.")
+)
 
-func translate(in io.Reader, out io.Writer) error {
+func labels(in io.Reader) (*symbol.Symbol, error) {
+	var lineCount int
+
+	s := symbol.New(symbol.BuiltIn)
 	p := parser.New(in)
 	for p.HasMoreCommands() {
 		p.Advance()
 		switch p.CommandType() {
+		case parser.ACommand, parser.CCommand:
+			lineCount++
 		case parser.LCommand:
+			s.AddEntry(p.Symbol(), lineCount)
+		}
+		if err := p.Error(); err != nil {
+			return s, err
+		}
+	}
+	return s, nil
+}
+
+func translate(in io.Reader, out io.Writer, s *symbol.Symbol) error {
+	memStart := 16
+
+	p := parser.New(in)
+	for p.HasMoreCommands() {
+		p.Advance()
+		switch p.CommandType() {
 		case parser.ACommand:
+			var addr int
 			i, err := strconv.Atoi(p.Symbol())
-			if err != nil {
-				return err
+			switch {
+			case err == nil:
+				addr = i
+			case err != nil:
+				if !s.Contains(p.Symbol()) {
+					s.AddEntry(p.Symbol(), memStart)
+					memStart++
+				}
+				addr = s.GetAddress(p.Symbol())
 			}
-			out.Write([]byte(fmt.Sprintf("0%s\n", fmt.Sprintf("%016b", i))[1:]))
+			binAddr := fmt.Sprintf("%016b", addr)[1:]
+			aTempl := "0%s\n"
+			out.Write([]byte(fmt.Sprintf(aTempl, binAddr)))
 		case parser.CCommand:
-			comp, dest, jump := code.Comp(p.Comp()), code.Dest(p.Dest()), code.Jump(p.Jump())
-			out.Write([]byte(fmt.Sprintf("111%s%s%s\n", comp, dest, jump)))
+			cTempl := "111%s%s%s\n"
+			binComp, binDest, binJump := code.Comp(p.Comp()), code.Dest(p.Dest()), code.Jump(p.Jump())
+			out.Write([]byte(fmt.Sprintf(cTempl, binComp, binDest, binJump)))
 		}
 	}
 	if err := p.Error(); err != nil {
@@ -59,8 +94,17 @@ func main() {
 	}
 	defer out.Close()
 
-	if err := translate(in, out); err != nil {
-		fmt.Fprintf(os.Stderr, "parse error: %v\n", err)
+	s, err := labels(in)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "labels error: %v\n", err)
+	}
+
+	if _, err := in.Seek(0, 0); err != nil {
+		fmt.Fprintf(os.Stderr, "seek error: %v\n", err)
+	}
+
+	if err := translate(in, out, s); err != nil {
+		fmt.Fprintf(os.Stderr, "translate error: %v\n", err)
 		os.Exit(1)
 	}
 
