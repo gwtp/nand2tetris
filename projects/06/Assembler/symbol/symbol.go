@@ -1,24 +1,59 @@
 // Package symbol keeps a correspondence between symbolic labels and numeric addresses.
 package symbol
 
-type Symbol struct{}
+// BuiltIn is a predefined symbol table.
+var BuiltIn = map[string]int{
+	"SP":     0,
+	"LCL":    1,
+	"ARG":    2,
+	"THIS":   3,
+	"THAT":   4,
+	"R0":     0,
+	"R1":     1,
+	"R2":     2,
+	"R3":     3,
+	"R4":     4,
+	"R5":     5,
+	"R6":     6,
+	"R7":     7,
+	"R8":     8,
+	"R9":     9,
+	"R10":    10,
+	"R11":    11,
+	"R12":    12,
+	"R13":    13,
+	"R14":    14,
+	"R15":    15,
+	"SCREEN": 16384,
+	"KBD":    24576,
+}
+
+type Symbol struct {
+	table map[string]int
+}
 
 // New instantiates a new symbol table.
-func New() *Symbol {
-	return &Symbol{}
+func New(table map[string]int) *Symbol {
+	return &Symbol{table: table}
 }
 
 // AddEntry adds the pair symbol, address to the table.
 func (s *Symbol) AddEntry(symbol string, address int) {
-	return
+	s.table[symbol] = address
 }
 
 // Contains asserts if the table contains the given symbol.
 func (s *Symbol) Contains(symbol string) bool {
-	return false
+	_, ok := s.table[symbol]
+	return ok
 }
 
 // GetAddress returns the address associated with the symbol.
 func (s *Symbol) GetAddress(symbol string) int {
-	return 0
+	return s.table[symbol]
+}
+
+// All returns the table of all symbols and their associated addresses.
+func (s *Symbol) All() map[string]int {
+	return s.table
 }
