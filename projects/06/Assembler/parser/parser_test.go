@@ -39,6 +39,13 @@ func TestParserSymbol(t *testing.T) {
 			wantSymbol:      "100",
 		},
 		{
+			name:            "A Command trailing comment",
+			input:           "@100 // foobar",
+			hasMoreCommands: true,
+			cType:           ACommand,
+			wantSymbol:      "100",
+		},
+		{
 			name:            "Comment",
 			input:           "// @foobar",
 			hasMoreCommands: true,
@@ -115,6 +122,15 @@ func TestParserCCommand(t *testing.T) {
 			wantJump:        "JGT",
 		},
 		{
+			name:            "C Instruction Goto trailing comment",
+			input:           "0;JMP // foobar",
+			hasMoreCommands: true,
+			cType:           CCommand,
+			wantComp:        "0",
+			wantDest:        "",
+			wantJump:        "JMP",
+		},
+		{
 			name:            "Comment 1",
 			input:           "// M=D+M",
 			hasMoreCommands: true,
@@ -133,7 +149,7 @@ func TestParserCCommand(t *testing.T) {
 			wantJump:        "",
 		},
 		{
-			name:            "empty input",
+			name:            "Empty input",
 			input:           "",
 			hasMoreCommands: false,
 			cType:           UnknownCommand,

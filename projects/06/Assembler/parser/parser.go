@@ -14,6 +14,12 @@ const (
 	ACommand
 	CCommand
 	LCommand
+
+	prefixComment  = "//"
+	prefixLabel    = "("
+	prefixACmd     = "@"
+	SeperatorCCmd1 = "="
+	SeperatorCCmd2 = ";"
 )
 
 type Parser struct {
@@ -60,27 +66,30 @@ func (p *Parser) reset() {
 // Advance reads the next command from the input. Should only be called if HasMoreCommands() is true.
 func (p *Parser) Advance() {
 	p.reset()
-	switch line := strings.TrimSpace(p.scanner.Text()); {
+	line := strings.TrimSpace(p.scanner.Text())
+	// Remove trailing comments
+	line = strings.Split(line, ` `)[0]
+	switch {
 	// Comment
-	case strings.HasPrefix(line, "//"):
+	case strings.HasPrefix(line, prefixComment):
 		p.commandType = UnknownCommand
 	// Label
-	case strings.HasPrefix(line, "("):
+	case strings.HasPrefix(line, prefixLabel):
 		p.commandType = LCommand
 		p.symbol = line[1 : len(line)-1]
 	// A Command
-	case strings.HasPrefix(line, "@"):
+	case strings.HasPrefix(line, prefixACmd):
 		p.commandType = ACommand
 		p.symbol = line[1:]
 	// C Command - Comp
-	case strings.Contains(line, "="):
+	case strings.Contains(line, SeperatorCCmd1):
 		p.commandType = CCommand
-		parts := strings.Split(line, "=")
+		parts := strings.Split(line, SeperatorCCmd1)
 		p.dest, p.comp = parts[0], parts[1]
 	// C Command - Goto (Jump)
-	case strings.Contains(line, ";"):
+	case strings.Contains(line, SeperatorCCmd2):
 		p.commandType = CCommand
-		parts := strings.Split(line, ";")
+		parts := strings.Split(line, SeperatorCCmd2)
 		p.comp, p.jump = parts[0], parts[1]
 	}
 }
